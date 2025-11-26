@@ -72,7 +72,6 @@ pipeline {
     post {
         always {
             echo "CI Pipeline completed!"
-            echo "New version pushed: ${env.NEW_VERSION}"
         }
     }
 }
