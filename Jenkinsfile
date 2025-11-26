@@ -59,11 +59,9 @@ pipeline {
                         git config user.email "${GIT_USER_EMAIL}"
                         git config user.name "${GIT_USER_NAME}"
 
-                        git add package.json
-
-                        # Commit only if changes exist
-                        git diff --cached --quiet || git commit -m "CI: Auto bump version to ${NEW_VERSION}"
-
+                        git add .
+                        git commit -m "CI: Auto bump version"
+                        
                         git push https://${TOKEN}:x-oauth-basic@github.com/vottri/node-web-demo.git HEAD:main
                     """
                 }
