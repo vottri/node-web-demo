@@ -31,15 +31,27 @@ pipeline {
 
         stage('Auto Update Version') {
             steps {
-                sh """
-                CURRENT=\$(grep '"version"' package.json | awk -F '"' '{print \$4}')
-                IFS='.' read -r major minor patch <<< "\$CURRENT"
-                NEW_VERSION="\$major.\$minor.\$((patch+1))"
+                script {
 
-                echo "Updating version: \$CURRENT → \$NEW_VERSION"
+                    sh '''
+                        CURRENT=$(grep '"version"' package.json | awk -F '"' '{print $4}')
 
-                sed -i "s/\\\"version\\\": \\\"[^\"]*\\\"/\\\"version\\\": \\\"\$NEW_VERSION\\\"/" package.json
-                """
+                        major=$(echo "$CURRENT" | cut -d. -f1)
+                        minor=$(echo "$CURRENT" | cut -d. -f2)
+                        patch=$(echo "$CURRENT" | cut -d. -f3)
+
+                        NEW_VERSION="$major.$minor.$((patch+1))"
+
+                        echo "Updating version: $CURRENT → $NEW_VERSION"
+
+                        sed -i "s/\\"version\\": \\"[^\"]*\\"/\\"version\\": \\"$NEW_VERSION\\"/" package.json
+
+                        echo "$NEW_VERSION" > .version_tmp
+                    '''
+
+                    // Lấy version để dùng ở stage sau
+                    env.NEW_VERSION = readFile('.version_tmp').trim()
+                }
             }
         }
 
@@ -47,13 +59,15 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: "${GIT_CREDENTIAL_ID}", variable: "TOKEN")]) {
                     sh """
-                    git config user.email "${GIT_USER_EMAIL}"
-                    git config user.name "${GIT_USER_NAME}"
+                        git config user.email "${GIT_USER_EMAIL}"
+                        git config user.name "${GIT_USER_NAME}"
 
-                    git add .
-                    git commit -m "CI: Auto bump version"
-                    
-                    git push https://${TOKEN}:x-oauth-basic@github.com/vottri/node-web-demo.git HEAD:main
+                        git add package.json
+
+                        # Chỉ commit nếu có thay đổi
+                        git diff --cached --quiet || git commit -m "CI: Auto bump version to ${NEW_VERSION}"
+
+                        git push https://${TOKEN}:x-oauth-basic@github.com/<your-username>/<your-repo>.git HEAD:main
                     """
                 }
             }
@@ -63,6 +77,7 @@ pipeline {
     post {
         always {
             echo "CI Pipeline completed!"
+            echo "New version pushed: ${env.NEW_VERSION}"
         }
     }
 }
