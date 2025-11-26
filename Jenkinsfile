@@ -31,27 +31,23 @@ pipeline {
 
         stage('Auto Update Version') {
             steps {
-                sh """
-                    CURRENT=\$(jq -r '.version' package.json)
+                sh '''
+                 sudo apt-get update
+                 sudo apt-get install -y jq
 
-                    major=\$(echo "\$CURRENT" | cut -d. -f1)
-                    minor=\$(echo "\$CURRENT" | cut -d. -f2)
-                    patch=\$(echo "\$CURRENT" | cut -d. -f3)
+                 CURRENT=$(jq -r '.version' package.json)
 
-                    NEW_VERSION="\$major.\$minor.\$((patch+1))"
+                 major=$(echo $CURRENT | cut -d. -f1)
+                 minor=$(echo $CURRENT | cut -d. -f2)
+                 patch=$(echo $CURRENT | cut -d. -f3)
 
-                    echo "Updating version: \$CURRENT → \$NEW_VERSION"
+                 NEW_VERSION="$major.$minor.$((patch+1))"
 
-                    # SAFE for Jenkins Sandbox—NO $v variable
-                    jq '.version = "'"$NEW_VERSION"'"' package.json > tmp.json
-                    mv tmp.json package.json
+                 echo "Updating version: $CURRENT → $NEW_VERSION"
 
-                    echo "\$NEW_VERSION" > .version_tmp
-                """
-
-                script {
-                    env.NEW_VERSION = readFile('.version_tmp').trim()
-                }
+                 jq --arg v "$NEW_VERSION" '.version = $v' package.json > package.tmp
+                 mv package.tmp package.json
+                '''
             }
         }
 
