@@ -32,23 +32,24 @@ pipeline {
         stage('Auto Update Version') {
             steps {
                 sh '''
-                 sudo apt-get update
-                 sudo apt-get install -y jq
+                  CURRENT=$(node -p "require('./package.json').version")
 
-                 CURRENT=$(jq -r '.version' package.json)
+                  major=$(echo $CURRENT | cut -d. -f1)
+                  minor=$(echo $CURRENT | cut -d. -f2)
+                  patch=$(echo $CURRENT | cut -d. -f3)
 
-                 major=$(echo $CURRENT | cut -d. -f1)
-                 minor=$(echo $CURRENT | cut -d. -f2)
-                 patch=$(echo $CURRENT | cut -d. -f3)
+                  NEW_VERSION="$major.$minor.$((patch+1))"
 
-                 NEW_VERSION="$major.$minor.$((patch+1))"
+                  echo "Updating version: $CURRENT → $NEW_VERSION"
 
-                 echo "Updating version: $CURRENT → $NEW_VERSION"
-
-                 jq --arg v "$NEW_VERSION" '.version = $v' package.json > package.tmp
-                 mv package.tmp package.json
-                '''
-            }
+                  node -e "
+                    let fs = require('fs');
+                    let pkg = require('./package.json');
+                    pkg.version = '$NEW_VERSION';
+                    fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+                  "
+               '''
+          }
         }
 
         stage('Commit & Push Back to GitHub') {
