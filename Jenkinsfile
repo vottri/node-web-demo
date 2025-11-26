@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         GIT_CREDENTIAL_ID = "github_pat"
-        GIT_USER_EMAIL = "thangtivo1991@gmail.com"
+        GIT_USER_EMAIL = "thangtrivo1991@gmail.com"
         GIT_USER_NAME = "vottri"
     }
 
@@ -42,8 +42,8 @@ pipeline {
 
                     echo "Updating version: \$CURRENT → \$NEW_VERSION"
 
-                    # Update package.json safely using jq (no sed errors)
-                    jq --arg v "\$NEW_VERSION" '.version = $v' package.json > tmp.json
+                    # SAFE for Jenkins Sandbox—NO $v variable
+                    jq '.version = "'"$NEW_VERSION"'"' package.json > tmp.json
                     mv tmp.json package.json
 
                     echo "\$NEW_VERSION" > .version_tmp
