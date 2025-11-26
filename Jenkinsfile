@@ -64,7 +64,7 @@ pipeline {
                         # Commit only if changes exist
                         git diff --cached --quiet || git commit -m "CI: Auto bump version to ${NEW_VERSION}"
 
-                        git push https://${TOKEN}:x-oauth-basic@github.com/<your-username>/<your-repo>.git HEAD:main
+                        git push https://${TOKEN}:x-oauth-basic@github.com/vottri/node-web-demo.git HEAD:main
                     """
                 }
             }
